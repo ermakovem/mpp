@@ -20,6 +20,7 @@ Result:
 
 
 To run:
+
 0. git clone https://github.com/cmuparlay/parlaylib.git
 1. g++ -O2 -I./parlaylib/include/ hw_1.cpp -o hw_1.out
 2. export PARLAY_NUM_THREADS=4
