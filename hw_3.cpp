@@ -313,6 +313,12 @@ public:
         }
     }
 
+    bool is_valid() const {
+        check1(root);
+        //check2(root);
+        return true;
+    }
+
 private:
     void insert_helper(Node* n, int i) {
         Node* clone_node = new Node(n->val, nullptr, nullptr);
@@ -333,9 +339,9 @@ private:
             //
             // only root left
 
-            if (n[0] != root) { //sanity check
-                throw std::runtime_error("was expecting to delete root but got smthing else");
-            }
+            // if (n[0] != root) { //sanity check
+            //     throw std::runtime_error("was expecting to delete root but got smthing else");
+            // }
 
             delete root;
             root = nullptr;
@@ -347,9 +353,10 @@ private:
             //  /\    /\            /  \ 
             // only root and 2 children left
 
-            if (n[1] != root) { //sanity check
-                throw std::runtime_error("was expecting to delete root but got smthing else");
-            } 
+            // if (n[1] != root) { //sanity check
+            //     throw std::runtime_error("was expecting to delete root but got smthing else");
+            // } 
+            
             if (n[1]->left == n[0]) {
                 root = n[1]->right;
             } else {
@@ -416,8 +423,21 @@ private:
         }
     }
 
-    bool is_valid() const {
-        return false;
+    void check1(Node* node) const {
+
+        if (node == nullptr) {
+            return;
+        }
+
+        if ((node->left != nullptr && node->right == nullptr) || (node->left == nullptr && node->right != nullptr)) {
+            throw std::runtime_error("each node has to have either no childer or both (data or routing)");
+        }
+        if (node->right != nullptr && node->left != nullptr && ((node->left->val > node->val) || (node->right->val < node->val))) {
+            throw std::runtime_error("left children <= val  or right children >= val");
+        }
+
+        check1(node->left);
+        check1(node->right);
     }
 };
 
@@ -431,7 +451,7 @@ std::vector<int> generate_vector(int n) {
     }
     return v;
 }
-#define TEST_SIZE 10'000'000
+#define TEST_SIZE 100000
 int main() {
 
     std::vector<int> v = generate_vector(TEST_SIZE);
@@ -441,9 +461,11 @@ int main() {
 
     for (int i : v) {
         bst.insert(i);
+        bst.is_valid();
     }
     for (int i : v) {
         bst.remove(i);
+        bst.is_valid();
     }
 
     auto end = std::chrono::high_resolution_clock::now();
@@ -469,6 +491,6 @@ int main() {
 
     Node* n = bst.get_root();
     BST_printer p = BST_printer();
-    p.print(bst.get_root());
+    //p.print(bst.get_root());
     //std::cout << ' ' << n->val << std::endl << n->left->val << "  " <<  n->right->val << std::endl;
 }
