@@ -266,7 +266,11 @@ private:
     //using Window = std::array<Node*, 3>;
     Node* root;
 public:
-    BST() : root(nullptr) {}
+    BST(std::vector<int>& v) : root(nullptr) {
+        for (int i : v) {
+            insert(i);
+        }
+    }
 
     Node* get_root() {
         return root;
@@ -356,7 +360,7 @@ private:
             // if (n[1] != root) { //sanity check
             //     throw std::runtime_error("was expecting to delete root but got smthing else");
             // } 
-            
+
             if (n[1]->left == n[0]) {
                 root = n[1]->right;
             } else {
@@ -445,52 +449,140 @@ std::vector<int> generate_vector(int n) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(-1 * n, n);
-    std::vector<int> v;
+    std::vector<int> res;
     for (int i = 0; i < n; i++) {
-        v.push_back(dis(gen));
+        res.push_back(dis(gen));
     }
-    return v;
+    return res;
 }
-#define TEST_SIZE 100000
-int main() {
 
-    std::vector<int> v = generate_vector(TEST_SIZE);
-    BST bst = BST();
+std::vector<int> prepopulate_vector(std::vector<int> v) {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0,1);
+    std::vector<int> res;
+    for (int i : v) {
+        if (dis(gen)) {
+            res.push_back(i);
+        }
+    }
+    return res;
+}
+#define TEST_SIZE 100'000
+
+
+void run_test(double x, int num_threads) {
+    std::vector<int> test_data = generate_vector(TEST_SIZE);
+    std::vector<int> prepopulate_data = prepopulate_vector(test_data);
+
+    BST tree = BST(prepopulate_data);
+
+    std::mt19937 rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> key_dis(0,TEST_SIZE - 1);
+    std::uniform_real_distribution<> prob_dis(0, 1);
+    long long ops = 0;
 
     auto start = std::chrono::high_resolution_clock::now();
+    while(true) {
+        auto now = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> elapsed = now - start;
+        if (elapsed.count() >= 5.0) break;
 
-    for (int i : v) {
-        bst.insert(i);
-        bst.is_valid();
-    }
-    for (int i : v) {
-        bst.remove(i);
-        bst.is_valid();
-    }
+        int idx = key_dis(gen);
+        double p = prob_dis(gen);
 
-    auto end = std::chrono::high_resolution_clock::now();
+        if (p < x) {
+            tree.insert(test_data[idx]);
+        } else if (p < 2 * x) {
+            tree.remove(test_data[idx]);
+        } else {
+            tree.contains(test_data[idx]);
+        }
+        ops++;
+    }   
 
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "Время выполнения для моей реализации: " << elapsed.count() << " секунд" << std::endl;
+    double throughput = ops / 5.0;
 
-    std::set<int> s;
-
-    start = std::chrono::high_resolution_clock::now();
-    
-    for (int i : v) {
-        s.insert(i);
-    }
-    for (int i : v) {
-        s.erase(i);
-    }
-
-    end = std::chrono::high_resolution_clock::now();
-
-    elapsed = end - start;
-    std::cout << "Время выполнения для set: " << elapsed.count() << " секунд" << std::endl;
-
-    Node* n = bst.get_root();
-    BST_printer p = BST_printer();
-    //p.print(bst.get_root());
-    //std::cout << ' ' << n->val << std::endl << n->left->val << "  " <<  n->right->val << std::endl;
+    std::cout << "Threads: " << num_threads << ", x: " << x << ", Throughput: " << throughput << " ops/sec" << std::endl;
 }
+
+int main() {
+    std::vector<double> x_values = {0.0, 0.1, 0.5};
+    std::vector<int> thread_counts = {1, 2, 3, 4};
+
+    for (double x : x_values) {
+        for (int num_threads : {1}) {
+            run_test(x, num_threads);
+        }
+    }
+
+    return 0;
+}
+
+
+// int main() {
+
+//     std::random_device rd;
+//     std::mt19937 gen(rd());
+//     std::uniform_int_distribution<> dis(-1 * n, n);
+
+//     std::vector<int> v = generate_vector(TEST_SIZE);
+
+//     std::vector<int> prepopulate;
+
+//     for 
+
+
+
+
+
+//     auto start = std::chrono::high_resolution_clock::now();
+
+//     while(true) {
+//         auto now = std::chrono::high_resolution_clock::now();
+//         std::chrono::duration<double> elapsed = end - start;
+//         if (elapsed.count() >= 5.0) break;
+
+
+//     }
+//     std::vector<int> v = generate_vector(TEST_SIZE);
+//     BST bst = BST();
+
+//     auto start = std::chrono::high_resolution_clock::now();
+
+//     for (int i : v) {
+//         bst.insert(i);
+//         //bst.is_valid();
+//     }
+//     for (int i : v) {
+//         bst.remove(i);
+//         //bst.is_valid();
+//     }
+
+//     auto end = std::chrono::high_resolution_clock::now();
+
+//     std::chrono::duration<double> elapsed = end - start;
+//     std::cout << "Время выполнения для моей реализации: " << elapsed.count() << " секунд" << std::endl;
+
+//     std::set<int> s;
+
+//     start = std::chrono::high_resolution_clock::now();
+    
+//     for (int i : v) {
+//         s.insert(i);
+//     }
+//     for (int i : v) {
+//         s.erase(i);
+//     }
+
+//     end = std::chrono::high_resolution_clock::now();
+
+//     elapsed = end - start;
+//     std::cout << "Время выполнения для set: " << elapsed.count() << " секунд" << std::endl;
+
+//     Node* n = bst.get_root();
+//     BST_printer p = BST_printer();
+//     p.print(bst.get_root());
+//     //std::cout << ' ' << n->val << std::endl << n->left->val << "  " <<  n->right->val << std::endl;
+// }
